@@ -1,65 +1,100 @@
-import Image from "next/image";
+import SponsorshipApp, { type Contract, type ContractItem, type Product, type Proposal, type ReviewState, type Slot } from "./app-client";
+import { getAppData } from "@/lib/db";
 
-export default function Home() {
+export default async function Home() {
+  const { products, slots, companies, proposals, contracts, contractItems, reviewStates } = getAppData();
+
+  const initialProducts: Product[] = products.map((product) => ({
+    id: product.id,
+    displayName: product.displayName,
+    categoryLarge: product.categoryLarge,
+    categoryMiddle: product.categoryMiddle,
+    categorySmall: product.categorySmall,
+    categoryDetail: product.categoryDetail,
+    inventoryType: product.inventoryType as Product["inventoryType"],
+    standardPrice: product.standardPrice,
+    standardCost: product.standardCost,
+    standardSpec: product.standardSpec,
+  }));
+
+  const initialSlots: Slot[] = slots.map((slot) => ({
+    id: slot.id,
+    productId: slot.productId,
+    slotName: slot.slotName,
+    slotNumber: slot.slotNumber,
+    season: slot.season,
+    targetMatch: slot.targetMatch,
+    location: slot.location,
+    status: slot.status as Slot["status"],
+    company: slot.company,
+    owner: slot.owner,
+    listPrice: slot.listPrice,
+    salesPrice: slot.salesPrice,
+    cost: slot.cost,
+    productionDue: slot.productionDue,
+    productionStatus: slot.productionStatus as Slot["productionStatus"],
+    specDetail: slot.specDetail,
+    inspectionStatus: slot.inspectionStatus as Slot["inspectionStatus"],
+    evidenceUrls: slot.evidenceUrls,
+    inspectionNote: slot.inspectionNote,
+    inspectedAt: slot.inspectedAt,
+  }));
+
+  const initialProposals: Proposal[] = proposals.map((proposal) => ({
+    id: proposal.id,
+    slotId: proposal.slotId,
+    companyName: proposal.companyName,
+    proposedDate: proposal.proposedDate,
+    status: proposal.status as Proposal["status"],
+    proposedPrice: proposal.proposedPrice,
+    owner: proposal.owner,
+    lostReason: proposal.lostReason,
+    note: proposal.note,
+  }));
+
+  const initialContracts: Contract[] = contracts.map((contract) => ({
+    id: contract.id,
+    companyName: contract.companyName,
+    name: contract.name,
+    season: contract.season,
+    startDate: contract.startDate,
+    endDate: contract.endDate,
+    totalAmount: contract.totalAmount,
+    status: contract.status as Contract["status"],
+    billingStatus: contract.billingStatus as Contract["billingStatus"],
+    owner: contract.owner,
+    note: contract.note,
+  }));
+
+  const initialContractItems: ContractItem[] = contractItems.map((item) => ({
+    id: item.id,
+    contractId: item.contractId,
+    slotId: item.slotId,
+    itemName: item.itemName,
+    allocatedAmount: item.allocatedAmount,
+    cost: item.cost,
+    note: item.note,
+  }));
+
+  const initialReviewStates: Record<string, ReviewState> = Object.fromEntries(
+    reviewStates.map((state) => [
+      state.reviewKey,
+      {
+        status: state.status as ReviewState["status"],
+        note: state.note,
+      },
+    ]),
+  );
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <SponsorshipApp
+      initialProducts={initialProducts}
+      initialSlots={initialSlots}
+      initialCompanies={companies}
+      initialProposals={initialProposals}
+      initialContracts={initialContracts}
+      initialContractItems={initialContractItems}
+      initialReviewStates={initialReviewStates}
+    />
   );
 }
