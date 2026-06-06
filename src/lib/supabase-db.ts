@@ -98,6 +98,24 @@ function getSupabase() {
   });
 }
 
+export async function checkSupabaseConnection() {
+  const client = getSupabase();
+  const organizationId = getOrganizationId();
+  const { data, error } = await client.from("organizations").select("id, name").eq("id", organizationId).maybeSingle();
+  if (error) {
+    return {
+      ok: false,
+      message: error.message,
+      organizationFound: false,
+    };
+  }
+  return {
+    ok: Boolean(data),
+    message: data ? "Supabase connection ok." : "Organization was not found.",
+    organizationFound: Boolean(data),
+  };
+}
+
 function getOrganizationId() {
   const organizationId = process.env.SUPABASE_ORGANIZATION_ID;
   if (!organizationId) {

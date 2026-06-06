@@ -45,6 +45,7 @@ Initial behavior:
 6. Add each user to `profiles` with a role.
 7. Set Vercel environment variables from `.env.example`.
 8. Switch `APP_DATA_PROVIDER` from `sqlite` to `supabase`.
+9. Check `/api/health` on the deployed app.
 
 Example organization setup:
 
@@ -80,6 +81,16 @@ Mutation permissions:
 Admin users can create additional Supabase Auth users from the in-app user management screen.
 
 When `APP_DATA_PROVIDER=sqlite`, auth checks are bypassed for local prototyping.
+
+## Health Check
+
+Open this URL after local or Vercel setup:
+
+```text
+/api/health
+```
+
+It returns provider mode, required environment variable status, and Supabase organization connectivity without exposing secret values.
 
 ## Cost Notes
 

@@ -52,6 +52,14 @@ npm run build
 npm run lint
 ```
 
+## Health Check
+
+```text
+http://localhost:3000/api/health
+```
+
+The health endpoint reports provider mode and Supabase readiness without exposing secrets.
+
 ## Deployment Direction
 
 Before deploying for team use, implement the Supabase data adapter and auth flow. The schema draft is in `docs/supabase-schema.sql`.
