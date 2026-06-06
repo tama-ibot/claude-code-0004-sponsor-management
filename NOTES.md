@@ -2,7 +2,7 @@
 
 ## Data Storage
 
-This prototype uses local SQLite via `better-sqlite3`.
+This prototype currently uses local SQLite via `better-sqlite3`.
 
 Database files are created under:
 
@@ -12,7 +12,7 @@ data/sponsorship.db
 
 The app initializes the schema and seed data automatically on first load.
 
-No data is pushed to an external server.
+The next target is Supabase Postgres for team use on Vercel. See `docs/cloud-deployment.md` and `docs/supabase-schema.sql`.
 
 ## Current Scope
 
