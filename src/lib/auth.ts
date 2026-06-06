@@ -87,7 +87,10 @@ export async function getCurrentProfile(): Promise<AppProfile | null> {
 }
 
 export async function requireRole(allowedRoles: AppRole[]) {
-  if (!isSupabaseProvider()) return null;
+  if (!isSupabaseProvider()) {
+    if (process.env.NODE_ENV !== "production" || process.env.ALLOW_LOCAL_AUTH_BYPASS === "true") return null;
+    throw new Error("本番環境ではSupabase認証が必要です。");
+  }
   const profile = await getCurrentProfile();
   if (!profile) {
     throw new Error("ログインが必要です。");

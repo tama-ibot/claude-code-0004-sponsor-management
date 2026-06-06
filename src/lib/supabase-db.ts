@@ -82,11 +82,7 @@ export type SupabaseUserAccount = {
   organizationId: string;
 };
 
-let supabase: ReturnType<typeof createClient<SupabaseDatabase>> | null = null;
-
 function getSupabase() {
-  if (supabase) return supabase;
-
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -94,14 +90,12 @@ function getSupabase() {
     throw new Error("Supabase is selected but NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing.");
   }
 
-  supabase = createClient<SupabaseDatabase>(url, serviceRoleKey, {
+  return createClient<SupabaseDatabase>(url, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
     },
   });
-
-  return supabase;
 }
 
 function getOrganizationId() {
@@ -162,25 +156,58 @@ function assertSingle<T>(data: T | null, error: { message: string } | null): T {
   return data;
 }
 
+async function assertSlotBelongsToOrganization(client: ReturnType<typeof createClient<SupabaseDatabase>>, slotId: string) {
+  const { data, error } = await client
+    .from("inventory_slots")
+    .select("id")
+    .eq("organization_id", getOrganizationId())
+    .eq("id", slotId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("指定された販売枠が見つからないか、この組織に属していません。");
+}
+
+async function assertProductBelongsToOrganization(client: ReturnType<typeof createClient<SupabaseDatabase>>, productId: string) {
+  const { data, error } = await client
+    .from("products")
+    .select("id")
+    .eq("organization_id", getOrganizationId())
+    .eq("id", productId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("指定された商品が見つからないか、この組織に属していません。");
+}
+
 export async function getSupabaseAppData(): Promise<DbShape> {
   const client = getSupabase();
   const organizationId = getOrganizationId();
 
-  const productQuery = client.from("products").select("*").order("category_large").order("category_middle").order("category_small").order("category_detail");
-  const slotQuery = client.from("inventory_slots").select("*").order("created_at").order("slot_number");
-  const companyQuery = client.from("companies").select("id, name, industry, owner, status, note").order("name");
-  const proposalQuery = client.from("proposals").select("id, slot_id, company_name, proposed_date, status, proposed_price, owner, lost_reason, note").order("created_at", { ascending: false });
-  const contractQuery = client.from("contracts").select("id, company_name, name, season, start_date, end_date, total_amount, status, billing_status, owner, note").order("created_at", { ascending: false });
-  const contractItemQuery = client.from("contract_items").select("id, contract_id, slot_id, item_name, allocated_amount, cost, note").order("created_at");
-  const reviewQuery = client.from("review_states").select("id, review_key, review_type, status, note").order("created_at");
-
-  productQuery.eq("organization_id", organizationId);
-  slotQuery.eq("organization_id", organizationId);
-  companyQuery.eq("organization_id", organizationId);
-  proposalQuery.eq("organization_id", organizationId);
-  contractQuery.eq("organization_id", organizationId);
-  contractItemQuery.eq("organization_id", organizationId);
-  reviewQuery.eq("organization_id", organizationId);
+  const productQuery = client
+    .from("products")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .order("category_large")
+    .order("category_middle")
+    .order("category_small")
+    .order("category_detail");
+  const slotQuery = client.from("inventory_slots").select("*").eq("organization_id", organizationId).order("created_at").order("slot_number");
+  const companyQuery = client.from("companies").select("id, name, industry, owner, status, note").eq("organization_id", organizationId).order("name");
+  const proposalQuery = client
+    .from("proposals")
+    .select("id, slot_id, company_name, proposed_date, status, proposed_price, owner, lost_reason, note")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false });
+  const contractQuery = client
+    .from("contracts")
+    .select("id, company_name, name, season, start_date, end_date, total_amount, status, billing_status, owner, note")
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false });
+  const contractItemQuery = client
+    .from("contract_items")
+    .select("id, contract_id, slot_id, item_name, allocated_amount, cost, note")
+    .eq("organization_id", organizationId)
+    .order("created_at");
+  const reviewQuery = client.from("review_states").select("id, review_key, review_type, status, note").eq("organization_id", organizationId).order("created_at");
 
   const [products, slots, companies, proposals, contracts, contractItems, reviewStates] = await Promise.all([
     productQuery,
@@ -367,8 +394,15 @@ export async function updateSupabaseSlotRecord(
   if (patch.inspectionNote !== undefined) payload.inspection_note = patch.inspectionNote;
   if (patch.inspectedAt !== undefined) payload.inspected_at = patch.inspectedAt;
 
-  const { error } = await getSupabase().from("inventory_slots").update(payload).eq("id", slotId);
+  const { data, error } = await getSupabase()
+    .from("inventory_slots")
+    .update(payload)
+    .eq("organization_id", getOrganizationId())
+    .eq("id", slotId)
+    .select("id")
+    .maybeSingle();
   if (error) throw new Error(error.message);
+  if (!data) throw new Error("指定された販売枠が見つからないか、この組織に属していません。");
 }
 
 export async function createSupabaseCompanyRecord(input: {
@@ -408,7 +442,10 @@ export async function createSupabaseProposalRecord(input: {
   lostReason: string;
   note: string;
 }) {
-  const { data, error } = await getSupabase()
+  const client = getSupabase();
+  await assertSlotBelongsToOrganization(client, input.slotId);
+
+  const { data, error } = await client
     .from("proposals")
     .insert(
       withOrganizationId({
@@ -459,6 +496,10 @@ export async function createSupabaseContractRecord(input: {
   }>;
 }) {
   const client = getSupabase();
+  for (const item of input.items) {
+    await assertSlotBelongsToOrganization(client, item.slotId);
+  }
+
   const { data, error } = await client
     .from("contracts")
     .insert(
@@ -479,35 +520,53 @@ export async function createSupabaseContractRecord(input: {
     .single();
 
   const contractRow = assertSingle(data, error);
-  const itemRows = input.items.map((item) =>
-    withOrganizationId({
-      contract_id: contractRow.id,
-      slot_id: item.slotId,
-      item_name: item.itemName,
-      allocated_amount: item.allocatedAmount,
-      cost: item.cost,
-      note: item.note,
-    }),
-  );
+  let insertedItems: {
+    data: SupabaseRecord[] | null;
+    error: { message: string } | null;
+  } = { data: [], error: null };
 
-  const insertedItems =
-    itemRows.length > 0
-      ? await client.from("contract_items").insert(itemRows).select("id, contract_id, slot_id, item_name, allocated_amount, cost, note")
-      : { data: [], error: null };
-  if (insertedItems.error) throw new Error(insertedItems.error.message);
+  try {
+    const itemRows = input.items.map((item) =>
+      withOrganizationId({
+        contract_id: contractRow.id,
+        slot_id: item.slotId,
+        item_name: item.itemName,
+        allocated_amount: item.allocatedAmount,
+        cost: item.cost,
+        note: item.note,
+      }),
+    );
 
-  await Promise.all(
-    input.items.map((item) =>
-      client
-        .from("inventory_slots")
-        .update({
-          status: "契約済み",
-          company: input.companyName,
-          ...(item.allocatedAmount > 0 ? { sales_price: item.allocatedAmount } : {}),
-        })
-        .eq("id", item.slotId),
-    ),
-  );
+    insertedItems =
+      itemRows.length > 0
+        ? await client.from("contract_items").insert(itemRows).select("id, contract_id, slot_id, item_name, allocated_amount, cost, note")
+        : { data: [], error: null };
+    if (insertedItems.error) throw new Error(insertedItems.error.message);
+
+    const slotUpdates = await Promise.all(
+      input.items.map((item) =>
+        client
+          .from("inventory_slots")
+          .update({
+            status: "契約済み",
+            company: input.companyName,
+            ...(item.allocatedAmount > 0 ? { sales_price: item.allocatedAmount } : {}),
+          })
+          .eq("organization_id", getOrganizationId())
+          .eq("id", item.slotId)
+          .select("id")
+          .maybeSingle(),
+      ),
+    );
+    const slotUpdateError = slotUpdates.find((result) => result.error)?.error;
+    if (slotUpdateError) throw new Error(slotUpdateError.message);
+    if (slotUpdates.some((result) => !result.data)) {
+      throw new Error("契約対象の販売枠更新に失敗しました。");
+    }
+  } catch (error) {
+    await client.from("contracts").delete().eq("organization_id", getOrganizationId()).eq("id", String(contractRow.id));
+    throw error;
+  }
 
   return {
     contract: {
@@ -704,6 +763,10 @@ export async function createSupabaseProductAndSlot(input: {
   const client = getSupabase();
   let productId = input.productId || "";
   let createdProduct: DbProduct | null = null;
+
+  if (input.productMode === "existing") {
+    await assertProductBelongsToOrganization(client, productId);
+  }
 
   if (input.productMode === "new") {
     const { data, error } = await client

@@ -29,7 +29,15 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const isSignOut = request.nextUrl.pathname === "/auth/sign-out";
+  const isRoot = request.nextUrl.pathname === "/";
+  if (!user && !isRoot && !isSignOut) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   return response;
 }

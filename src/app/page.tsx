@@ -8,17 +8,19 @@ import SponsorshipApp, {
   type UserAccount,
 } from "./app-client";
 import LoginClient from "./login-client";
-import { getCurrentProfile, getCurrentUser, isSupabaseProvider } from "@/lib/auth";
+import { getCurrentProfile, getCurrentUser, isSupabaseProvider, type AppProfile } from "@/lib/auth";
 import { getAppData, getUserAccounts } from "@/lib/data-provider";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  let profile: AppProfile | null = null;
+
   if (isSupabaseProvider()) {
     const user = await getCurrentUser();
     if (!user) return <LoginClient />;
 
-    const profile = await getCurrentProfile();
+    profile = await getCurrentProfile();
     if (!profile) {
       return (
         <main className="flex min-h-screen items-center justify-center bg-[#eef1f4] p-6 text-[#172026]">
@@ -30,19 +32,17 @@ export default async function Home() {
               `profiles` に登録すると利用できます。
             </p>
             <div className="mt-4 rounded-md bg-[#f6f7f8] p-3 font-mono text-xs text-[#172026]">{user.id}</div>
-            <a
-              href="/auth/sign-out"
-              className="mt-5 inline-flex h-9 items-center rounded-md border border-[#ccd3da] px-3 text-sm font-semibold hover:bg-[#f1f3f5]"
-            >
-              ログアウト
-            </a>
+            <form action="/auth/sign-out" method="post" className="mt-5">
+              <button className="inline-flex h-9 items-center rounded-md border border-[#ccd3da] px-3 text-sm font-semibold hover:bg-[#f1f3f5]">
+                ログアウト
+              </button>
+            </form>
           </section>
         </main>
       );
     }
   }
 
-  const profile = await getCurrentProfile();
   const { products, slots, companies, proposals, contracts, contractItems, reviewStates } = await getAppData();
   const userAccounts: UserAccount[] = profile?.role === "admin" ? await getUserAccounts() : [];
 

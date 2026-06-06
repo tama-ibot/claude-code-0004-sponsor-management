@@ -1565,12 +1565,11 @@ export default function SponsorshipApp({
                     <span className="font-semibold">{currentUser.name}</span>
                     <span className="ml-2 text-[#607080]">{roleLabel(currentUser.role)}</span>
                   </div>
-                  <a
-                    href="/auth/sign-out"
-                    className="inline-flex h-9 items-center rounded-md border border-[#ccd3da] bg-white px-3 text-sm font-medium hover:bg-[#f1f3f5]"
-                  >
-                    ログアウト
-                  </a>
+                  <form action="/auth/sign-out" method="post">
+                    <button className="inline-flex h-9 items-center rounded-md border border-[#ccd3da] bg-white px-3 text-sm font-medium hover:bg-[#f1f3f5]">
+                      ログアウト
+                    </button>
+                  </form>
                 </>
               ) : (
                 <select className="h-9 rounded-md border border-[#ccd3da] bg-white px-3 text-sm">
