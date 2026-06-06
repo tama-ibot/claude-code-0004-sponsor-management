@@ -77,6 +77,8 @@ Mutation permissions:
 - `manager`: all commercial operations
 - `admin`: all operations
 
+Admin users can create additional Supabase Auth users from the in-app user management screen.
+
 When `APP_DATA_PROVIDER=sqlite`, auth checks are bypassed for local prototyping.
 
 ## Cost Notes

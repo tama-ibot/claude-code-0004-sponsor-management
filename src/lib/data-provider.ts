@@ -13,7 +13,9 @@ import {
   createSupabaseContractRecord,
   createSupabaseProductAndSlot,
   createSupabaseProposalRecord,
+  createSupabaseUserAccount,
   getSupabaseAppData,
+  getSupabaseUserAccounts,
   insertSupabaseImportedData,
   updateSupabaseSlotRecord,
   upsertSupabaseReviewStateRecord,
@@ -64,4 +66,14 @@ export async function importData(
 export async function createSlot(input: Parameters<typeof createSupabaseProductAndSlot>[0]) {
   if (isSupabaseProvider()) return createSupabaseProductAndSlot(input);
   return createProductAndSlot(input);
+}
+
+export async function getUserAccounts() {
+  if (isSupabaseProvider()) return getSupabaseUserAccounts();
+  return [];
+}
+
+export async function createUserAccount(input: Parameters<typeof createSupabaseUserAccount>[0]) {
+  if (isSupabaseProvider()) return createSupabaseUserAccount(input);
+  throw new Error("ユーザー管理はSupabaseモードでのみ利用できます。");
 }

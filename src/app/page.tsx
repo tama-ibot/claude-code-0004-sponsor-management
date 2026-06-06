@@ -1,7 +1,15 @@
-import SponsorshipApp, { type Contract, type ContractItem, type Product, type Proposal, type ReviewState, type Slot } from "./app-client";
+import SponsorshipApp, {
+  type Contract,
+  type ContractItem,
+  type Product,
+  type Proposal,
+  type ReviewState,
+  type Slot,
+  type UserAccount,
+} from "./app-client";
 import LoginClient from "./login-client";
 import { getCurrentProfile, getCurrentUser, isSupabaseProvider } from "@/lib/auth";
-import { getAppData } from "@/lib/data-provider";
+import { getAppData, getUserAccounts } from "@/lib/data-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +44,7 @@ export default async function Home() {
 
   const profile = await getCurrentProfile();
   const { products, slots, companies, proposals, contracts, contractItems, reviewStates } = await getAppData();
+  const userAccounts: UserAccount[] = profile?.role === "admin" ? await getUserAccounts() : [];
 
   const initialProducts: Product[] = products.map((product) => ({
     id: product.id,
@@ -128,6 +137,7 @@ export default async function Home() {
       initialContracts={initialContracts}
       initialContractItems={initialContractItems}
       initialReviewStates={initialReviewStates}
+      initialUserAccounts={userAccounts}
       currentUser={
         profile
           ? {

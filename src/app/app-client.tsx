@@ -6,6 +6,7 @@ import {
   createContract,
   createProposal,
   createSlot,
+  createUserAccount,
   importProductsAndSlots,
   upsertReviewState,
   updateInventorySlot,
@@ -13,6 +14,7 @@ import {
   type CreateContractInput,
   type CreateProposalInput,
   type CreateSlotInput,
+  type CreateUserAccountInput,
   type ImportedProductInput,
   type ImportedSlotInput,
   type UpsertReviewStateInput,
@@ -217,6 +219,23 @@ export type CurrentUser = {
   name: string;
   role: "sales" | "manager" | "ops" | "admin";
 };
+
+export type UserAccount = {
+  id: string;
+  email: string;
+  displayName: string;
+  role: CurrentUser["role"];
+  organizationId: string;
+};
+
+type UserForm = {
+  email: string;
+  password: string;
+  displayName: string;
+  role: CurrentUser["role"];
+};
+
+const appRoleOptions: CurrentUser["role"][] = ["sales", "manager", "ops", "admin"];
 
 const reviewStatusOptions: ReviewStatus[] = ["未確認", "同一候補", "別物", "保留"];
 
@@ -772,6 +791,7 @@ export default function SponsorshipApp({
   initialContracts,
   initialContractItems,
   initialReviewStates,
+  initialUserAccounts,
   currentUser,
 }: {
   initialProducts: Product[];
@@ -781,13 +801,14 @@ export default function SponsorshipApp({
   initialContracts: Contract[];
   initialContractItems: ContractItem[];
   initialReviewStates: Record<string, ReviewState>;
+  initialUserAccounts: UserAccount[];
   currentUser?: CurrentUser;
 }) {
   const fallbackProducts = initialProducts.length ? initialProducts : seedProducts;
   const fallbackSlots = initialSlots.length ? initialSlots : seedSlots;
-  const [activeView, setActiveView] = useState<
-    "slots" | "products" | "companies" | "contracts" | "calendar" | "review" | "csv" | "report"
-  >("slots");
+  const [activeView, setActiveView] = useState<"slots" | "products" | "companies" | "contracts" | "calendar" | "review" | "csv" | "report" | "users">(
+    "slots",
+  );
   const [products, setProducts] = useState<Product[]>(fallbackProducts);
   const [slots, setSlots] = useState<Slot[]>(fallbackSlots);
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
@@ -795,6 +816,7 @@ export default function SponsorshipApp({
   const [contracts, setContracts] = useState<Contract[]>(initialContracts);
   const [contractItems, setContractItems] = useState<ContractItem[]>(initialContractItems);
   const [reviewStates, setReviewStates] = useState<Record<string, ReviewState>>(initialReviewStates);
+  const [userAccounts, setUserAccounts] = useState<UserAccount[]>(initialUserAccounts);
   const [reviewStatusFilter, setReviewStatusFilter] = useState<ReviewStatus | "すべて">("すべて");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<SlotStatus | "すべて">("すべて");
@@ -836,6 +858,13 @@ export default function SponsorshipApp({
     owner: "営業A",
     note: "",
     selectedSlotIds: [],
+  });
+  const [userMessage, setUserMessage] = useState("");
+  const [userForm, setUserForm] = useState<UserForm>({
+    email: "",
+    password: "",
+    displayName: "",
+    role: "sales",
   });
   const [createForm, setCreateForm] = useState<CreateForm>(() => ({
     productMode: "existing",
@@ -1446,6 +1475,35 @@ export default function SponsorshipApp({
     });
   }
 
+  function submitUserAccount() {
+    if (!userForm.email || !userForm.password || !userForm.displayName) {
+      setUserMessage("メールアドレス、表示名、仮パスワードを入力してください。");
+      return;
+    }
+    const payload: CreateUserAccountInput = {
+      email: userForm.email,
+      password: userForm.password,
+      displayName: userForm.displayName,
+      role: userForm.role,
+    };
+    setUserMessage("ユーザーを作成中です。");
+    startTransition(async () => {
+      try {
+        const created = await createUserAccount(payload);
+        setUserAccounts((current) => [...current, created]);
+        setUserForm({
+          email: "",
+          password: "",
+          displayName: "",
+          role: "sales",
+        });
+        setUserMessage("ユーザーを作成しました。");
+      } catch (error) {
+        setUserMessage(error instanceof Error ? error.message : "ユーザー作成に失敗しました。");
+      }
+    });
+  }
+
   return (
     <main className="min-h-screen bg-[#f6f7f8] text-[#172026]">
       <div className="grid min-h-screen grid-cols-[240px_1fr]">
@@ -1464,6 +1522,7 @@ export default function SponsorshipApp({
               ["review", "品質レビュー"],
               ["csv", "CSVインポート"],
               ["report", "売上・粗利"],
+              ...(currentUser?.role === "admin" ? ([["users", "ユーザー管理"]] as const) : []),
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -1477,7 +1536,7 @@ export default function SponsorshipApp({
             ))}
           </nav>
           <div className="mx-3 mt-4 border-t border-[#d9dee3] pt-4 text-xs text-[#607080]">
-            <p>初期版: ログインなし</p>
+            <p>{currentUser ? "認証あり" : "初期版: ログインなし"}</p>
             <p className="mt-1">対象: MVP 1</p>
           </div>
         </aside>
@@ -1495,6 +1554,7 @@ export default function SponsorshipApp({
                 {activeView === "review" && "統合候補レビュー"}
                 {activeView === "csv" && "CSVインポート"}
                 {activeView === "report" && "売上・粗利レポート"}
+                {activeView === "users" && "ユーザー管理"}
               </h2>
             </div>
             <div className="flex items-center gap-2">
@@ -2818,6 +2878,77 @@ export default function SponsorshipApp({
                     </tbody>
                   </table>
                 </div>
+              </section>
+            )}
+
+            {activeView === "users" && currentUser?.role === "admin" && (
+              <section className="grid grid-cols-[1fr_360px] gap-5">
+                <div className="rounded-md border border-[#d9dee3] bg-white">
+                  <div className="border-b border-[#d9dee3] px-4 py-3">
+                    <h3 className="font-semibold">部員アカウント</h3>
+                    <p className="mt-1 text-sm text-[#607080]">Supabase Authユーザーとアプリ内ロールを管理します。</p>
+                  </div>
+                  <div className="overflow-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#f1f3f5] text-left text-xs font-semibold text-[#607080]">
+                        <tr>
+                          <th className="px-4 py-3">表示名</th>
+                          <th className="px-3 py-3">メール</th>
+                          <th className="px-3 py-3">ロール</th>
+                          <th className="px-3 py-3">ユーザーID</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {userAccounts.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-6 text-sm text-[#607080]">
+                              まだユーザーがありません。
+                            </td>
+                          </tr>
+                        )}
+                        {userAccounts.map((user) => (
+                          <tr key={user.id} className="border-t border-[#edf0f2]">
+                            <td className="px-4 py-3 font-medium">{user.displayName}</td>
+                            <td className="px-3 py-3 text-[#607080]">{user.email || "-"}</td>
+                            <td className="px-3 py-3">{roleLabel(user.role)}</td>
+                            <td className="px-3 py-3 font-mono text-xs text-[#607080]">{user.id}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <aside className="rounded-md border border-[#d9dee3] bg-white p-4">
+                  <h3 className="font-semibold">ユーザー作成</h3>
+                  <div className="mt-4 space-y-3">
+                    <TextInput label="メールアドレス" value={userForm.email} onChange={(email) => setUserForm((current) => ({ ...current, email }))} />
+                    <TextInput label="表示名" value={userForm.displayName} onChange={(displayName) => setUserForm((current) => ({ ...current, displayName }))} />
+                    <TextInput label="仮パスワード" value={userForm.password} onChange={(password) => setUserForm((current) => ({ ...current, password }))} />
+                    <label className="block text-xs font-semibold text-[#607080]">
+                      ロール
+                      <select
+                        value={userForm.role}
+                        onChange={(event) => setUserForm((current) => ({ ...current, role: event.target.value as CurrentUser["role"] }))}
+                        className="mt-1 h-9 w-full rounded-md border border-[#ccd3da] bg-white px-3 text-sm text-[#172026]"
+                      >
+                        {appRoleOptions.map((role) => (
+                          <option key={role} value={role}>
+                            {roleLabel(role)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  {userMessage && <p className="mt-4 rounded-md bg-[#f6f7f8] p-3 text-sm text-[#607080]">{userMessage}</p>}
+                  <button
+                    onClick={submitUserAccount}
+                    disabled={isPending}
+                    className="mt-4 h-10 w-full rounded-md bg-[#172026] px-4 text-sm font-semibold text-white hover:bg-[#2b3741] disabled:bg-[#9aa5ae]"
+                  >
+                    {isPending ? "作成中" : "ユーザーを作成"}
+                  </button>
+                </aside>
               </section>
             )}
           </div>

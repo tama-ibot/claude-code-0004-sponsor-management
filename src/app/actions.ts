@@ -7,6 +7,7 @@ import {
   createContract as createContractData,
   createProposal as createProposalData,
   createSlot as createSlotData,
+  createUserAccount as createUserAccountData,
   importData,
   updateSlot,
   upsertReviewState as upsertReviewStateData,
@@ -121,6 +122,13 @@ export type UpsertReviewStateInput = {
   note: string;
 };
 
+export type CreateUserAccountInput = {
+  email: string;
+  password: string;
+  displayName: string;
+  role: "sales" | "manager" | "ops" | "admin";
+};
+
 export async function updateInventorySlot(slotId: string, patch: SlotPatch) {
   await requireRole(["sales", "manager", "ops", "admin"]);
   await updateSlot(slotId, patch);
@@ -170,4 +178,11 @@ export async function upsertReviewState(input: UpsertReviewStateInput) {
   const saved = await upsertReviewStateData(input);
   revalidatePath("/");
   return saved;
+}
+
+export async function createUserAccount(input: CreateUserAccountInput) {
+  await requireRole(["admin"]);
+  const created = await createUserAccountData(input);
+  revalidatePath("/");
+  return created;
 }

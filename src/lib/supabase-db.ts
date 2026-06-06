@@ -74,6 +74,14 @@ type SupabaseSlot = {
   inspected_at: string;
 };
 
+export type SupabaseUserAccount = {
+  id: string;
+  email: string;
+  displayName: string;
+  role: "sales" | "manager" | "ops" | "admin";
+  organizationId: string;
+};
+
 let supabase: ReturnType<typeof createClient<SupabaseDatabase>> | null = null;
 
 function getSupabase() {
@@ -268,6 +276,71 @@ export async function getSupabaseAppData(): Promise<DbShape> {
       status: state.status,
       note: state.note,
     })),
+  };
+}
+
+export async function getSupabaseUserAccounts(): Promise<SupabaseUserAccount[]> {
+  const client = getSupabase();
+  const { data, error } = await client
+    .from("profiles")
+    .select("id, organization_id, display_name, role")
+    .eq("organization_id", getOrganizationId())
+    .order("display_name");
+
+  if (error) throw new Error(error.message);
+
+  const authUsers = await client.auth.admin.listUsers();
+  if (authUsers.error) throw new Error(authUsers.error.message);
+  const emailById = new Map(authUsers.data.users.map((user) => [user.id, user.email || ""]));
+
+  return ((data || []) as Array<{ id: string; organization_id: string; display_name: string; role: string }>).map((profile) => ({
+    id: profile.id,
+    email: emailById.get(profile.id) || "",
+    displayName: profile.display_name,
+    role: profile.role as SupabaseUserAccount["role"],
+    organizationId: profile.organization_id,
+  }));
+}
+
+export async function createSupabaseUserAccount(input: {
+  email: string;
+  password: string;
+  displayName: string;
+  role: "sales" | "manager" | "ops" | "admin";
+}) {
+  const client = getSupabase();
+  const { data: userData, error: userError } = await client.auth.admin.createUser({
+    email: input.email,
+    password: input.password,
+    email_confirm: true,
+    user_metadata: {
+      display_name: input.displayName,
+      role: input.role,
+    },
+  });
+
+  if (userError) throw new Error(userError.message);
+  if (!userData.user) throw new Error("Supabase user creation returned no user.");
+
+  const { data, error } = await client
+    .from("profiles")
+    .insert({
+      id: userData.user.id,
+      organization_id: getOrganizationId(),
+      display_name: input.displayName,
+      role: input.role,
+    })
+    .select("id, organization_id, display_name, role")
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  return {
+    id: String(data.id),
+    email: input.email,
+    displayName: String(data.display_name),
+    role: String(data.role) as SupabaseUserAccount["role"],
+    organizationId: String(data.organization_id),
   };
 }
 
