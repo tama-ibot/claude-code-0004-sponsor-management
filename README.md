@@ -50,6 +50,7 @@ This directory is ignored by Git.
 npm run dev
 npm run build
 npm run lint
+npm run export:supabase-seed
 ```
 
 ## Health Check

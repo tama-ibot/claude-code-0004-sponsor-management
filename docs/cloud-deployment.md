@@ -47,6 +47,22 @@ Initial behavior:
 8. Switch `APP_DATA_PROVIDER` from `sqlite` to `supabase`.
 9. Check `/api/health` on the deployed app.
 
+## Migrating Local Prototype Data
+
+Generate a local seed SQL file from SQLite:
+
+```bash
+npm run export:supabase-seed
+```
+
+The file is written to:
+
+```text
+data/supabase-seed.sql
+```
+
+`data/` is ignored by Git. Replace `__ORGANIZATION_ID__` with the `organizations.id` value before running the seed SQL in Supabase.
+
 Example organization setup:
 
 ```sql

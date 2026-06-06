@@ -39,6 +39,7 @@ The next target is Supabase Postgres for team use on Vercel. See `docs/cloud-dep
 - Data provider switch for SQLite and Supabase
 - Supabase Auth login gate and role checks for cloud mode
 - Admin user management screen for Supabase Auth users
+- SQLite to Supabase seed SQL export script
 
 ## Commands
 
