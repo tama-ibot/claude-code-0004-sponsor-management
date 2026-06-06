@@ -13,6 +13,7 @@ data/sponsorship.db
 The app initializes the schema and seed data automatically on first load.
 
 The next target is Supabase Postgres for team use on Vercel. See `docs/cloud-deployment.md` and `docs/supabase-schema.sql`.
+`APP_DATA_PROVIDER=supabase` switches the server data layer to Supabase after the required environment variables are set.
 
 ## Current Scope
 
@@ -35,6 +36,7 @@ The next target is Supabase Postgres for team use on Vercel. See `docs/cloud-dep
 - Review progress summary and status filtering
 - Product summary
 - Sales and gross margin summary
+- Data provider switch for SQLite and Supabase
 
 ## Commands
 

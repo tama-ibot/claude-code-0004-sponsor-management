@@ -7,6 +7,7 @@ Sports team sponsorship product, sales slot, company, contract, and inspection m
 - Next.js
 - React
 - Local SQLite via `better-sqlite3`
+- Optional Supabase data provider via `APP_DATA_PROVIDER=supabase`
 
 ## Cloud Target
 
@@ -54,3 +55,4 @@ npm run lint
 ## Deployment Direction
 
 Before deploying for team use, implement the Supabase data adapter and auth flow. The schema draft is in `docs/supabase-schema.sql`.
+The Supabase data adapter is present, but auth screens and role enforcement are still next work.

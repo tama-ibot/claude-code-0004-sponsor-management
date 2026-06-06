@@ -39,10 +39,12 @@ Initial behavior:
 
 1. Create a Supabase project.
 2. Run `docs/supabase-schema.sql` in Supabase SQL Editor.
-3. Create users in Supabase Auth.
-4. Add each user to `profiles` with a role.
-5. Set Vercel environment variables from `.env.example`.
-6. Switch `APP_DATA_PROVIDER` from `sqlite` to `supabase` after the app adapter is implemented.
+3. Insert one row into `organizations`.
+4. Copy that organization `id` into `SUPABASE_ORGANIZATION_ID`.
+5. Create users in Supabase Auth.
+6. Add each user to `profiles` with a role.
+7. Set Vercel environment variables from `.env.example`.
+8. Switch `APP_DATA_PROVIDER` from `sqlite` to `supabase`.
 
 ## Cost Notes
 

@@ -2,14 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import {
-  createCompanyRecord,
-  createContractRecord,
-  createProductAndSlot,
-  createProposalRecord,
-  insertImportedData,
-  updateSlotRecord,
-  upsertReviewStateRecord,
-} from "@/lib/db";
+  createCompany as createCompanyData,
+  createContract as createContractData,
+  createProposal as createProposalData,
+  createSlot as createSlotData,
+  importData,
+  updateSlot,
+  upsertReviewState as upsertReviewStateData,
+} from "@/lib/data-provider";
 
 export type SlotPatch = {
   status?: string;
@@ -121,7 +121,7 @@ export type UpsertReviewStateInput = {
 };
 
 export async function updateInventorySlot(slotId: string, patch: SlotPatch) {
-  updateSlotRecord(slotId, patch);
+  await updateSlot(slotId, patch);
   revalidatePath("/");
 }
 
@@ -129,37 +129,37 @@ export async function importProductsAndSlots(
   products: ImportedProductInput[],
   slots: ImportedSlotInput[],
 ) {
-  const summary = insertImportedData(products, slots);
+  const summary = await importData(products, slots);
   revalidatePath("/");
   return summary;
 }
 
 export async function createSlot(input: CreateSlotInput) {
-  const created = createProductAndSlot(input);
+  const created = await createSlotData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function createCompany(input: CreateCompanyInput) {
-  const created = createCompanyRecord(input);
+  const created = await createCompanyData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function createProposal(input: CreateProposalInput) {
-  const created = createProposalRecord(input);
+  const created = await createProposalData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function createContract(input: CreateContractInput) {
-  const created = createContractRecord(input);
+  const created = await createContractData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function upsertReviewState(input: UpsertReviewStateInput) {
-  const saved = upsertReviewStateRecord(input);
+  const saved = await upsertReviewStateData(input);
   revalidatePath("/");
   return saved;
 }

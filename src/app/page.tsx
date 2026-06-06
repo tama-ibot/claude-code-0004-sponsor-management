@@ -1,8 +1,10 @@
 import SponsorshipApp, { type Contract, type ContractItem, type Product, type Proposal, type ReviewState, type Slot } from "./app-client";
-import { getAppData } from "@/lib/db";
+import { getAppData } from "@/lib/data-provider";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const { products, slots, companies, proposals, contracts, contractItems, reviewStates } = getAppData();
+  const { products, slots, companies, proposals, contracts, contractItems, reviewStates } = await getAppData();
 
   const initialProducts: Product[] = products.map((product) => ({
     id: product.id,

@@ -90,7 +90,7 @@ export type DbReviewState = {
   note: string;
 };
 
-type DbShape = {
+export type DbShape = {
   products: DbProduct[];
   slots: DbSlot[];
   companies: DbCompany[];
