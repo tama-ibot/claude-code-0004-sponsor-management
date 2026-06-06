@@ -20,10 +20,7 @@ import {
   updateSupabaseSlotRecord,
   upsertSupabaseReviewStateRecord,
 } from "./supabase-db";
-
-function isSupabaseProvider() {
-  return process.env.APP_DATA_PROVIDER === "supabase";
-}
+import { isSupabaseProvider } from "./auth";
 
 export async function getAppData() {
   if (isSupabaseProvider()) return getSupabaseAppData();

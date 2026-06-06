@@ -780,6 +780,7 @@ export function createProductAndSlot(input: {
 
   let productId = input.productId || "";
   let createdProduct: DbProduct | null = null;
+  const slotId = crypto.randomUUID();
 
   database.transaction(() => {
     if (input.productMode === "new") {
@@ -825,7 +826,7 @@ export function createProductAndSlot(input: {
     }
 
     insertSlot.run(
-      crypto.randomUUID(),
+      slotId,
       productId,
       input.slotName,
       input.slotNumber,
@@ -871,12 +872,10 @@ export function createProductAndSlot(input: {
           inspection_note as inspectionNote,
           inspected_at as inspectedAt
         FROM inventory_slots
-        WHERE product_id = ?
-        ORDER BY created_at DESC
-        LIMIT 1
+        WHERE id = ?
       `,
       )
-      .get(productId) as DbSlot,
+      .get(slotId) as DbSlot,
   };
 }
 
@@ -1025,6 +1024,17 @@ function initializeDb(database: Database.Database) {
 }
 
 function ensureColumn(database: Database.Database, tableName: string, columnName: string, definition: string) {
+  const allowedDefinitions: Record<string, Record<string, string>> = {
+    inventory_slots: {
+      inspection_status: "TEXT NOT NULL DEFAULT '未対応'",
+      evidence_urls: "TEXT NOT NULL DEFAULT ''",
+      inspection_note: "TEXT NOT NULL DEFAULT ''",
+      inspected_at: "TEXT NOT NULL DEFAULT ''",
+    },
+  };
+  if (allowedDefinitions[tableName]?.[columnName] !== definition) {
+    throw new Error(`Unsupported migration column: ${tableName}.${columnName}`);
+  }
   const columns = database.prepare(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
   if (columns.some((column) => column.name === columnName)) return;
   database.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`).run();
