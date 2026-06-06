@@ -56,3 +56,4 @@ npm run lint
 
 Before deploying for team use, implement the Supabase data adapter and auth flow. The schema draft is in `docs/supabase-schema.sql`.
 The Supabase data adapter is present, but auth screens and role enforcement are still next work.
+Supabase Auth login, session middleware, and role checks are now wired for `APP_DATA_PROVIDER=supabase`.

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireRole } from "@/lib/auth";
 import {
   createCompany as createCompanyData,
   createContract as createContractData,
@@ -121,6 +122,7 @@ export type UpsertReviewStateInput = {
 };
 
 export async function updateInventorySlot(slotId: string, patch: SlotPatch) {
+  await requireRole(["sales", "manager", "ops", "admin"]);
   await updateSlot(slotId, patch);
   revalidatePath("/");
 }
@@ -129,36 +131,42 @@ export async function importProductsAndSlots(
   products: ImportedProductInput[],
   slots: ImportedSlotInput[],
 ) {
+  await requireRole(["manager", "admin"]);
   const summary = await importData(products, slots);
   revalidatePath("/");
   return summary;
 }
 
 export async function createSlot(input: CreateSlotInput) {
+  await requireRole(["manager", "admin"]);
   const created = await createSlotData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function createCompany(input: CreateCompanyInput) {
+  await requireRole(["sales", "manager", "admin"]);
   const created = await createCompanyData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function createProposal(input: CreateProposalInput) {
+  await requireRole(["sales", "manager", "admin"]);
   const created = await createProposalData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function createContract(input: CreateContractInput) {
+  await requireRole(["manager", "admin"]);
   const created = await createContractData(input);
   revalidatePath("/");
   return created;
 }
 
 export async function upsertReviewState(input: UpsertReviewStateInput) {
+  await requireRole(["manager", "admin"]);
   const saved = await upsertReviewStateData(input);
   revalidatePath("/");
   return saved;

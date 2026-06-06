@@ -1,9 +1,40 @@
 import SponsorshipApp, { type Contract, type ContractItem, type Product, type Proposal, type ReviewState, type Slot } from "./app-client";
+import LoginClient from "./login-client";
+import { getCurrentProfile, getCurrentUser, isSupabaseProvider } from "@/lib/auth";
 import { getAppData } from "@/lib/data-provider";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  if (isSupabaseProvider()) {
+    const user = await getCurrentUser();
+    if (!user) return <LoginClient />;
+
+    const profile = await getCurrentProfile();
+    if (!profile) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-[#eef1f4] p-6 text-[#172026]">
+          <section className="w-full max-w-[520px] rounded-md border border-[#d9dee3] bg-white p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#607080]">Account Setup</p>
+            <h1 className="mt-2 text-2xl font-semibold">プロフィール未設定</h1>
+            <p className="mt-3 text-sm leading-6 text-[#607080]">
+              Supabase Authのユーザーは作成されていますが、`profiles` にロール情報がありません。管理者がこのユーザーIDを
+              `profiles` に登録すると利用できます。
+            </p>
+            <div className="mt-4 rounded-md bg-[#f6f7f8] p-3 font-mono text-xs text-[#172026]">{user.id}</div>
+            <a
+              href="/auth/sign-out"
+              className="mt-5 inline-flex h-9 items-center rounded-md border border-[#ccd3da] px-3 text-sm font-semibold hover:bg-[#f1f3f5]"
+            >
+              ログアウト
+            </a>
+          </section>
+        </main>
+      );
+    }
+  }
+
+  const profile = await getCurrentProfile();
   const { products, slots, companies, proposals, contracts, contractItems, reviewStates } = await getAppData();
 
   const initialProducts: Product[] = products.map((product) => ({
@@ -97,6 +128,14 @@ export default async function Home() {
       initialContracts={initialContracts}
       initialContractItems={initialContractItems}
       initialReviewStates={initialReviewStates}
+      currentUser={
+        profile
+          ? {
+              name: profile.displayName,
+              role: profile.role,
+            }
+          : undefined
+      }
     />
   );
 }

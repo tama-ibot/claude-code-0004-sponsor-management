@@ -37,6 +37,7 @@ The next target is Supabase Postgres for team use on Vercel. See `docs/cloud-dep
 - Product summary
 - Sales and gross margin summary
 - Data provider switch for SQLite and Supabase
+- Supabase Auth login gate and role checks for cloud mode
 
 ## Commands
 

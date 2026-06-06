@@ -213,6 +213,11 @@ export type ReviewState = {
   note: string;
 };
 
+export type CurrentUser = {
+  name: string;
+  role: "sales" | "manager" | "ops" | "admin";
+};
+
 const reviewStatusOptions: ReviewStatus[] = ["未確認", "同一候補", "別物", "保留"];
 
 const seedProducts: Product[] = [
@@ -407,6 +412,16 @@ function currency(value: number) {
     currency: "JPY",
     maximumFractionDigits: 0,
   }).format(value || 0);
+}
+
+function roleLabel(role: CurrentUser["role"]) {
+  const labels: Record<CurrentUser["role"], string> = {
+    sales: "営業担当",
+    manager: "営業マネージャー",
+    ops: "運営担当",
+    admin: "管理者",
+  };
+  return labels[role];
 }
 
 function marginRate(salesPrice: number, cost: number) {
@@ -757,6 +772,7 @@ export default function SponsorshipApp({
   initialContracts,
   initialContractItems,
   initialReviewStates,
+  currentUser,
 }: {
   initialProducts: Product[];
   initialSlots: Slot[];
@@ -765,6 +781,7 @@ export default function SponsorshipApp({
   initialContracts: Contract[];
   initialContractItems: ContractItem[];
   initialReviewStates: Record<string, ReviewState>;
+  currentUser?: CurrentUser;
 }) {
   const fallbackProducts = initialProducts.length ? initialProducts : seedProducts;
   const fallbackSlots = initialSlots.length ? initialSlots : seedSlots;
@@ -1482,11 +1499,26 @@ export default function SponsorshipApp({
             </div>
             <div className="flex items-center gap-2">
               {isPending && <span className="text-xs font-medium text-[#607080]">保存中...</span>}
-              <select className="h-9 rounded-md border border-[#ccd3da] bg-white px-3 text-sm">
-                <option>営業A</option>
-                <option>営業マネージャー</option>
-                <option>運営担当</option>
-              </select>
+              {currentUser ? (
+                <>
+                  <div className="rounded-md border border-[#ccd3da] bg-white px-3 py-2 text-xs">
+                    <span className="font-semibold">{currentUser.name}</span>
+                    <span className="ml-2 text-[#607080]">{roleLabel(currentUser.role)}</span>
+                  </div>
+                  <a
+                    href="/auth/sign-out"
+                    className="inline-flex h-9 items-center rounded-md border border-[#ccd3da] bg-white px-3 text-sm font-medium hover:bg-[#f1f3f5]"
+                  >
+                    ログアウト
+                  </a>
+                </>
+              ) : (
+                <select className="h-9 rounded-md border border-[#ccd3da] bg-white px-3 text-sm">
+                  <option>営業A</option>
+                  <option>営業マネージャー</option>
+                  <option>運営担当</option>
+                </select>
+              )}
               <button
                 onClick={() => {
                   setPanelMode("create");

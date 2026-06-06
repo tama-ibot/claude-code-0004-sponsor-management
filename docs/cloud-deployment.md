@@ -46,6 +46,39 @@ Initial behavior:
 7. Set Vercel environment variables from `.env.example`.
 8. Switch `APP_DATA_PROVIDER` from `sqlite` to `supabase`.
 
+Example organization setup:
+
+```sql
+insert into organizations (name)
+values ('Your Team Name')
+returning id;
+```
+
+Example profile setup after creating a Supabase Auth user:
+
+```sql
+insert into profiles (id, organization_id, display_name, role)
+values (
+  'AUTH_USER_ID',
+  'ORGANIZATION_ID',
+  'User Name',
+  'manager'
+);
+```
+
+## Auth Behavior
+
+When `APP_DATA_PROVIDER=supabase`, the app requires Supabase Auth login before loading data.
+
+Mutation permissions:
+
+- `sales`: update slots, create companies, create proposals
+- `ops`: update slots
+- `manager`: all commercial operations
+- `admin`: all operations
+
+When `APP_DATA_PROVIDER=sqlite`, auth checks are bypassed for local prototyping.
+
 ## Cost Notes
 
 The prototype can be tested on free tiers, but business use with team members and customer data should plan for paid capacity later.
